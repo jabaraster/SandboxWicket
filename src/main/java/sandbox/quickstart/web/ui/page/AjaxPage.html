@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+    <head>
+        <title>AjaxPage</title>
+        <meta charset="UTF-8" />
+    </head>
+    <body>
+        <h1><a wicket:id="reloader">更新</a></h1>
+        <h1 wicket:id="now">現在時刻</h1>
+        <form wicket:id="form">
+            <ul>
+                <li>
+                    <input wicket:id="text" type="text" />
+                </li>
+                <li>
+                    <input wicket:id="file" type="file" />
+                </li>
+                <li>
+                    <button wicket:id="submitter">通常のサブミット</button>
+                </li>
+                <li>
+                    <button wicket:id="ajaxSubmitter">Ajaxサブミット</button>
+                </li>
+                <li>
+                    <button wicket:id="customSubmitter" disabled>カスタムサブミット</button>
+                </li>
+            </ul>
+        </form>
+        <footer>
+            <div id="progressMonitor"></div>
+        </footer>
+    </body>
+</html>
