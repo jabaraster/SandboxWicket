@@ -4,9 +4,7 @@ import jabara.general.Empty;
 import jabara.general.NameValue;
 import jabara.wicket.CssUtil;
 import jabara.wicket.JavaScriptUtil;
-import jabara.wicket.Models;
 
-import java.io.Serializable;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.List;
@@ -16,12 +14,10 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxButton;
 import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
@@ -37,14 +33,10 @@ import sandbox.quickstart.Environment;
 public class AjaxPage extends WebPage {
     private static final long      serialVersionUID = -4965903336608758671L;
 
-    private final Handler          handler          = new Handler();
-
     private Link<?>                reloader;
     private Label                  now;
     private Form<?>                form;
-    private TextField<String>      text;
     private FileUploadField        file;
-    private Button                 submitter;
     private Button                 ajaxSubmitter;
 
     private Component              customSubmitter;
@@ -70,12 +62,12 @@ public class AjaxPage extends WebPage {
         , new NameValue<>("package", Environment.class.getPackage().getName()) //
                 , new NameValue<>("formId", getForm().getMarkupId()) //
                 , new NameValue<>("fileId", getFile().getMarkupId()) //
-                , new NameValue<>("ajaxSubmitUrl", getAjaxSubmitUrl()) //
                 , new NameValue<>("customSutmitterId", getCustomSubmitter().getMarkupId()) //
                 , new NameValue<>("customSubmitUrl", getCustomSubmitterBehavior().getCallbackUrl()) //
+                , new NameValue<>("ajaxSubmitterId", getAjaxSubmitter().getMarkupId()) //
+                , new NameValue<>("ajaxSubmitUrl", getAjaxSubmitUrl()) //
                 ));
-        pResponse.render(JavaScriptHeaderItem.forUrl(getRequest().getContextPath() + "/js/" + AjaxPage.class.getSimpleName() + ".js"));
-        // pResponse.render(JavaScriptUtil.forComponentJavaScriptHeaderItem(AjaxPage.class));
+        pResponse.render(JavaScriptUtil.forComponentJavaScriptHeaderItem(AjaxPage.class));
     }
 
     private Button getAjaxSubmitter() {
@@ -84,11 +76,12 @@ public class AjaxPage extends WebPage {
                 @Override
                 protected void onSubmit(final AjaxRequestTarget pTarget, @SuppressWarnings("unused") final Form<?> pForm) {
                     jabara.Debug.write("★★★★★★★★★★★★★");
-                    System.out.println(getText().getModelObject());
                     final FileUpload upload = getFile().getFileUpload();
                     if (upload != null) {
                         System.out.println(upload.getClientFileName());
                     }
+
+                    pTarget.add(getFile());
                     pTarget.add(getNow());
                 }
             };
@@ -115,7 +108,6 @@ public class AjaxPage extends WebPage {
                 @Override
                 protected void onEvent(final AjaxRequestTarget pTarget) {
                     jabara.Debug.write("★★★★★★★★★★★★★");
-                    System.out.println(getText().getModelObject());
                     final FileUpload upload = getFile().getFileUpload();
                     if (upload != null) {
                         System.out.println(upload.getClientFileName());
@@ -138,9 +130,7 @@ public class AjaxPage extends WebPage {
     private Form<?> getForm() {
         if (this.form == null) {
             this.form = new Form<>("form");
-            this.form.add(getText());
             this.form.add(getFile());
-            this.form.add(getSubmitter());
             this.form.add(getAjaxSubmitter());
             this.form.add(getCustomSubmitter());
         }
@@ -165,32 +155,4 @@ public class AjaxPage extends WebPage {
         }
         return this.reloader;
     }
-
-    private Button getSubmitter() {
-        if (this.submitter == null) {
-            this.submitter = new Button("submitter") {
-                @Override
-                public void onSubmit() {
-                    jabara.Debug.write("★★★★★★★★★★★★★");
-                    System.out.println(getText().getModelObject());
-                    final FileUpload upload = getFile().getFileUpload();
-                    if (upload != null) {
-                        System.out.println(upload.getClientFileName());
-                    }
-                }
-            };
-        }
-        return this.submitter;
-    }
-
-    private TextField<String> getText() {
-        if (this.text == null) {
-            this.text = new TextField<>("text", Models.of(Empty.STRING));
-        }
-        return this.text;
-    }
-
-    private class Handler implements Serializable {
-    }
-
 }

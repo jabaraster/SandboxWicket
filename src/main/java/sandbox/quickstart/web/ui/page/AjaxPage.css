@@ -1,1 +1,1 @@
-li{line-height:1.5em}input,button{font-size:large}#progressMonitor{border:1px solid rgba(100,100,100,0.3);background:#64ff64;height:32px;width:0}ul li:nth-child(1),ul li:nth-child(3),ul li:nth-child(4){display:none}
+li{line-height:1.5em}input,button{font-size:large}#progressMonitor{border:1px solid rgba(100,100,100,0.3);background:#64ff64;height:32px;width:0;white-space:nowrap}ul li:nth-child(2){display:none}

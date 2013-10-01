@@ -5,6 +5,7 @@ var sandbox = {
             fileId: '${fileId}',
             customSubmitterId: '${customSutmitterId}',
             customSubmitUrl: '${customSubmitUrl}',
+            ajaxSubmitterId: '${ajaxSubmitterId}',
             ajaxSubmitUrl: '${ajaxSubmitUrl}',
             dummy: null
         }
