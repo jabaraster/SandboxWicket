@@ -2,8 +2,9 @@ package sandbox.quickstart.web.ui.page;
 
 import jabara.general.Empty;
 import jabara.general.NameValue;
-import jabara.wicket.CssUtil;
-import jabara.wicket.JavaScriptUtil;
+import jabara.wicket.ComponentCssHeaderItem;
+import jabara.wicket.ComponentJavaScriptHeaderItem;
+import jabara.wicket.VariablesJavaScriptHeaderItem;
 
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -25,6 +26,7 @@ import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 
 import sandbox.quickstart.Environment;
+import sandbox.quickstart.web.ui.component.FileUploadPanel;
 
 /**
  *
@@ -34,7 +36,13 @@ public class AjaxPage extends WebPage {
     private static final long      serialVersionUID = -4965903336608758671L;
 
     private Link<?>                reloader;
+
+    private Form<?>                uploadForm;
+    private FileUploadPanel        uploader;
+    private FileUploadPanel        uploader2;
+
     private Label                  now;
+    private Label                  noAjaxTarget;
     private Form<?>                form;
     private FileUploadField        file;
     private Button                 ajaxSubmitter;
@@ -47,7 +55,9 @@ public class AjaxPage extends WebPage {
      */
     public AjaxPage() {
         this.add(getReloader());
+        this.add(getUploadForm());
         this.add(getNow());
+        this.add(getNoAjaxTarget());
         this.add(getForm());
     }
 
@@ -57,17 +67,17 @@ public class AjaxPage extends WebPage {
     @Override
     public void renderHead(final IHeaderResponse pResponse) {
         super.renderHead(pResponse);
-        pResponse.render(CssUtil.forComponentCssHeaderItem(AjaxPage.class));
-        pResponse.render(JavaScriptUtil.forVariablesScriptHeaderItem(AjaxPage.class, AjaxPage.class.getSimpleName() + "_vars.js" //
-        , new NameValue<>("package", Environment.class.getPackage().getName()) //
-                , new NameValue<>("formId", getForm().getMarkupId()) //
-                , new NameValue<>("fileId", getFile().getMarkupId()) //
-                , new NameValue<>("customSutmitterId", getCustomSubmitter().getMarkupId()) //
-                , new NameValue<>("customSubmitUrl", getCustomSubmitterBehavior().getCallbackUrl()) //
-                , new NameValue<>("ajaxSubmitterId", getAjaxSubmitter().getMarkupId()) //
-                , new NameValue<>("ajaxSubmitUrl", getAjaxSubmitUrl()) //
+        pResponse.render(ComponentCssHeaderItem.forType(AjaxPage.class));
+        pResponse.render(VariablesJavaScriptHeaderItem.forVariables(AjaxPage.class, AjaxPage.class.getSimpleName() + "_vars.js" //
+        , new NameValue<String>("package", Environment.class.getPackage().getName()) //
+                , new NameValue<String>("formId", getForm().getMarkupId()) //
+                , new NameValue<String>("fileId", getFile().getMarkupId()) //
+                , new NameValue<String>("customSutmitterId", getCustomSubmitter().getMarkupId()) //
+                , new NameValue<CharSequence>("customSubmitUrl", getCustomSubmitterBehavior().getCallbackUrl()) //
+                , new NameValue<String>("ajaxSubmitterId", getAjaxSubmitter().getMarkupId()) //
+                , new NameValue<CharSequence>("ajaxSubmitUrl", getAjaxSubmitUrl()) //
                 ));
-        pResponse.render(JavaScriptUtil.forComponentJavaScriptHeaderItem(AjaxPage.class));
+        pResponse.render(ComponentJavaScriptHeaderItem.forType(AjaxPage.class));
     }
 
     private Button getAjaxSubmitter() {
@@ -81,7 +91,7 @@ public class AjaxPage extends WebPage {
                         System.out.println(upload.getClientFileName());
                     }
 
-                    pTarget.add(getFile());
+                    // pTarget.add(getFile());
                     pTarget.add(getNow());
                 }
             };
@@ -129,12 +139,24 @@ public class AjaxPage extends WebPage {
 
     private Form<?> getForm() {
         if (this.form == null) {
-            this.form = new Form<>("form");
+            this.form = new Form<Object>("form");
             this.form.add(getFile());
             this.form.add(getAjaxSubmitter());
             this.form.add(getCustomSubmitter());
         }
         return this.form;
+    }
+
+    private Label getNoAjaxTarget() {
+        if (this.noAjaxTarget == null) {
+            this.noAjaxTarget = new Label("noAjaxTarget", new AbstractReadOnlyModel<String>() {
+                @Override
+                public String getObject() {
+                    return DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime());
+                }
+            });
+        }
+        return this.noAjaxTarget;
     }
 
     private Label getNow() {
@@ -151,8 +173,31 @@ public class AjaxPage extends WebPage {
 
     private Link<?> getReloader() {
         if (this.reloader == null) {
-            this.reloader = new BookmarkablePageLink<>("reloader", AjaxPage.class);
+            this.reloader = new BookmarkablePageLink<Object>("reloader", AjaxPage.class);
         }
         return this.reloader;
+    }
+
+    private FileUploadPanel getUploader() {
+        if (this.uploader == null) {
+            this.uploader = new FileUploadPanel("uploader");
+        }
+        return this.uploader;
+    }
+
+    private FileUploadPanel getUploader2() {
+        if (this.uploader2 == null) {
+            this.uploader2 = new FileUploadPanel("uploader2");
+        }
+        return this.uploader2;
+    }
+
+    private Form<?> getUploadForm() {
+        if (this.uploadForm == null) {
+            this.uploadForm = new Form<Object>("uploadForm");
+            this.uploadForm.add(getUploader());
+            this.uploadForm.add(getUploader2());
+        }
+        return this.uploadForm;
     }
 }

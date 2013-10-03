@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body>
+
+<wicket:panel>
+  <div class="FileUploadPanel">
+    <ul>
+      <li>
+        <div class="fileOverlay">
+          ファイルを選択
+          <input wicket:id="file" type="file" />
+        </div>
+      </li>
+      <li style="display: none;"><button class="uploader">アップロード</button></li>
+      <li><button wicket:id="hiddenUploader" class="hiddenUploader">アップロード</button></li>
+      <li><button wicket:id="deleter" class="deleter">削除</button></li>
+      <li><button wicket:id="restorer" class="restorer">元に戻す</button></li>
+    </ul>
+  </div>
+</wicket:panel>
+
+</body>
+</html>

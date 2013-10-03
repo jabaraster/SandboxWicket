@@ -5,17 +5,29 @@
         <meta charset="UTF-8" />
     </head>
     <body>
+
         <h1><a wicket:id="reloader">更新</a></h1>
+
+        <form wicket:id="uploadForm">
+            <hr/>
+            <div wicket:id="uploader"></div>
+            <hr/>
+            <div wicket:id="uploader2"></div>
+            <hr/>
+        </form>
+
         <h1 wicket:id="now">現在時刻</h1>
+        <h1 wicket:id="noAjaxTarget">現在時刻</h1>
         <form wicket:id="form">
+            <div class="fileOverlay">
+                ファイルを選択
+                <input wicket:id="file" type="file" />
+            </div>
             <ul>
-                <li>
-                    <input wicket:id="file" type="file" />
-                </li>
-                <li>
+                <li style="display: none;">
                     <button wicket:id="ajaxSubmitter">Ajaxサブミット</button>
                 </li>
-                <li>
+                <li style="display: none;">
                     <button wicket:id="customSubmitter" disabled>カスタムサブミット</button>
                 </li>
             </ul>
