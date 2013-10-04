@@ -4,6 +4,7 @@ import jabara.general.Empty;
 import jabara.general.NameValue;
 import jabara.wicket.ComponentCssHeaderItem;
 import jabara.wicket.ComponentJavaScriptHeaderItem;
+import jabara.wicket.IAjaxCallback;
 import jabara.wicket.VariablesJavaScriptHeaderItem;
 
 import java.text.DateFormat;
@@ -14,7 +15,9 @@ import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxButton;
+import org.apache.wicket.markup.head.CssHeaderItem;
 import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
@@ -24,6 +27,8 @@ import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.request.resource.CssResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
 
 import sandbox.quickstart.Environment;
 import sandbox.quickstart.web.ui.component.FileUploadPanel;
@@ -67,7 +72,10 @@ public class AjaxPage extends WebPage {
     @Override
     public void renderHead(final IHeaderResponse pResponse) {
         super.renderHead(pResponse);
+        pResponse.render(CssHeaderItem.forReference(new CssResourceReference(AjaxPage.class, "bootstrap/css/bootstrap.min.css")));
         pResponse.render(ComponentCssHeaderItem.forType(AjaxPage.class));
+
+        pResponse.render(JavaScriptHeaderItem.forReference(new JavaScriptResourceReference(AjaxPage.class, "bootstrap/js/bootstrap.min.js")));
         pResponse.render(VariablesJavaScriptHeaderItem.forVariables(AjaxPage.class, AjaxPage.class.getSimpleName() + "_vars.js" //
         , new NameValue<String>("package", Environment.class.getPackage().getName()) //
                 , new NameValue<String>("formId", getForm().getMarkupId()) //
@@ -181,6 +189,13 @@ public class AjaxPage extends WebPage {
     private FileUploadPanel getUploader() {
         if (this.uploader == null) {
             this.uploader = new FileUploadPanel("uploader");
+            this.uploader.setOnUpload(new IAjaxCallback() {
+
+                @Override
+                public void call(final AjaxRequestTarget pTarget) {
+                    pTarget.add(getNow());
+                }
+            });
         }
         return this.uploader;
     }

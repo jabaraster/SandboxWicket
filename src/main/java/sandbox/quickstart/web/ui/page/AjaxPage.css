@@ -1,1 +1,1 @@
-@charset "UTF-8";li{line-height:1.5em}input,button{font-size:large}#progressMonitor{border:1px solid rgba(100,100,100,0.3);background:#64ff64;height:32px;width:0;white-space:nowrap}input[type="file"]{opacity:0;filter:alpha(opacity=0);position:absolute;right:0;top:0;margin:0;font-size:100px;cursor:pointer}div.fileOverlay{display:inline-block;overflow:hidden;position:relative;padding:.5em;border:1px solid #999;background-color:#eee}
+@charset "UTF-8";div.progressBarFields{margin-top:3px;margin-left:10px;margin-right:10px}div.FileUploadPanel{margin:10px}
