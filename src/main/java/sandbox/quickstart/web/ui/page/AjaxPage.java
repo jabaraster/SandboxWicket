@@ -203,6 +203,13 @@ public class AjaxPage extends WebPage {
     private FileUploadPanel getUploader2() {
         if (this.uploader2 == null) {
             this.uploader2 = new FileUploadPanel("uploader2");
+            this.uploader2.setOnUpload(new IAjaxCallback() {
+
+                @Override
+                public void call(final AjaxRequestTarget pTarget) {
+                    pTarget.add(getNow());
+                }
+            });
         }
         return this.uploader2;
     }
