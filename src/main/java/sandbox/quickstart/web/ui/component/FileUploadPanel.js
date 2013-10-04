@@ -71,8 +71,8 @@ function initializeFileUploadPanel(pContainerId, pSubmitUrl, pHiddenUploaderId, 
                 var xhr = $.ajaxSettings.xhr();
                 $(xhr.upload).on('progress', function(e) {
                     var evt = e.originalEvent;
-                    var percent = evt.loaded / evt.total * 100;
-                    progressBar.text('アップロード中... ' + Math.floor(percent) + '% (' + evt.loaded + "/" + evt.total + ")");
+                    var percent = Math.floor(evt.loaded / evt.total * 100);
+                    progressBar.text('アップロード中... ' + percent + '% (' + evt.loaded + "/" + evt.total + ")");
                     progressBar.css('width', percent + '%');
                 });
                 return xhr;
