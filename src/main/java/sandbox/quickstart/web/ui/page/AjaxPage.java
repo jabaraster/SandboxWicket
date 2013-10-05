@@ -4,6 +4,7 @@ import jabara.general.Empty;
 import jabara.general.NameValue;
 import jabara.wicket.ComponentCssHeaderItem;
 import jabara.wicket.ComponentJavaScriptHeaderItem;
+import jabara.wicket.FileUploadPanel;
 import jabara.wicket.IAjaxCallback;
 import jabara.wicket.VariablesJavaScriptHeaderItem;
 
@@ -31,7 +32,6 @@ import org.apache.wicket.request.resource.CssResourceReference;
 import org.apache.wicket.request.resource.JavaScriptResourceReference;
 
 import sandbox.quickstart.Environment;
-import sandbox.quickstart.web.ui.component.FileUploadPanel;
 
 /**
  *
