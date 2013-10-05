@@ -40,6 +40,21 @@ import sandbox.quickstart.web.ui.component.FileUploadPanel;
 public class AjaxPage extends WebPage {
     private static final long      serialVersionUID = -4965903336608758671L;
 
+    private final IAjaxCallback    callback         = new IAjaxCallback() {
+                                                        @Override
+                                                        public void call(final AjaxRequestTarget pTarget) {
+                                                            jabara.Debug.write(getUploader().getDataOperation());
+                                                            pTarget.add(getNow());
+                                                        }
+                                                    };
+    private final IAjaxCallback    callback2        = new IAjaxCallback() {
+                                                        @Override
+                                                        public void call(final AjaxRequestTarget pTarget) {
+                                                            jabara.Debug.write(getUploader2().getDataOperation());
+                                                            pTarget.add(getNow());
+                                                        }
+                                                    };
+
     private Link<?>                reloader;
 
     private Form<?>                uploadForm;
@@ -189,13 +204,9 @@ public class AjaxPage extends WebPage {
     private FileUploadPanel getUploader() {
         if (this.uploader == null) {
             this.uploader = new FileUploadPanel("uploader");
-            this.uploader.setOnUpload(new IAjaxCallback() {
-
-                @Override
-                public void call(final AjaxRequestTarget pTarget) {
-                    pTarget.add(getNow());
-                }
-            });
+            this.uploader.setOnDelete(this.callback);
+            this.uploader.setOnReset(this.callback);
+            this.uploader.setOnUpload(this.callback);
         }
         return this.uploader;
     }
@@ -203,13 +214,9 @@ public class AjaxPage extends WebPage {
     private FileUploadPanel getUploader2() {
         if (this.uploader2 == null) {
             this.uploader2 = new FileUploadPanel("uploader2");
-            this.uploader2.setOnUpload(new IAjaxCallback() {
-
-                @Override
-                public void call(final AjaxRequestTarget pTarget) {
-                    pTarget.add(getNow());
-                }
-            });
+            this.uploader2.setOnDelete(this.callback2);
+            this.uploader2.setOnReset(this.callback2);
+            this.uploader2.setOnUpload(this.callback2);
         }
         return this.uploader2;
     }

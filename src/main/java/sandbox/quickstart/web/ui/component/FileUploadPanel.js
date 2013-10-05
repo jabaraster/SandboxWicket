@@ -33,7 +33,7 @@ function initializeFileUploadPanel(pContainerId, pSubmitUrl, pHiddenUploaderId, 
 
         if (files.length == 0) return;
 
-		var progressBarContainer = root.find('div.progressBarFields');
+		var progressBarContainer = root.find('div.progressBarArea');
 		var progressBar = progressBarContainer.find('> .progress > .progress-bar');
 		progressBar.css('width', '5%'); // アニメーションが見えるように少し伸ばす.
         progressBarContainer.show('slow', function() {
@@ -52,7 +52,7 @@ function initializeFileUploadPanel(pContainerId, pSubmitUrl, pHiddenUploaderId, 
 
 	function doSend(pUrl, pJSFile, pJQueryFileField) {
 		var root = $('#' + pContainerId);
-		var progressBarContainer = root.find('div.progressBarFields');
+		var progressBarContainer = root.find('div.progressBarArea');
 		var progressBar = progressBarContainer.find('> .progress > .progress-bar');
 
 		progressBar.text('');

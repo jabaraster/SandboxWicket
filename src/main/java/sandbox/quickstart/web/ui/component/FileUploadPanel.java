@@ -3,12 +3,25 @@
  */
 package sandbox.quickstart.web.ui.component;
 
+import jabara.general.ArgUtil;
 import jabara.general.Empty;
+import jabara.general.ExceptionUtil;
+import jabara.general.IProducer;
 import jabara.wicket.ComponentCssHeaderItem;
 import jabara.wicket.ComponentJavaScriptHeaderItem;
 import jabara.wicket.IAjaxCallback;
 import jabara.wicket.NullAjaxCallback;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -25,18 +38,25 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.util.io.IOUtils;
 import org.apache.wicket.util.string.interpolator.MapVariableInterpolator;
 
 /**
  * @author jabaraster
  */
-@SuppressWarnings({ "serial", "synthetic-access" })
 public class FileUploadPanel extends Panel {
-    private static final long  serialVersionUID = -220850110042516428L;
+    private static final long  serialVersionUID     = -220850110042516428L;
 
-    private final Handler      handler          = new Handler();
+    private IProducer<File>    temporaryFileCreator = DefaultTemporaryFileCreator.GLOBAL;
 
-    private IAjaxCallback      onUpload         = NullAjaxCallback.GLOBAL;
+    private Operation          operation            = Operation.NOOP;
+    private Data               uploadData;
+
+    private IAjaxCallback      onUpload             = NullAjaxCallback.GLOBAL;
+    private IAjaxCallback      onReset              = NullAjaxCallback.GLOBAL;
+    private IAjaxCallback      onDelete             = NullAjaxCallback.GLOBAL;
+
+    private final Handler      handler              = new Handler();
 
     private WebMarkupContainer container;
     private FileUploadField    file;
@@ -50,6 +70,13 @@ public class FileUploadPanel extends Panel {
     public FileUploadPanel(final String pId) {
         super(pId);
         this.add(getContainer());
+    }
+
+    /**
+     * @return -
+     */
+    public DataOperation getDataOperation() {
+        return new DataOperation(this.operation, this.uploadData);
     }
 
     /**
@@ -77,8 +104,37 @@ public class FileUploadPanel extends Panel {
      * @param pCallback -
      * @return -
      */
+    public FileUploadPanel setOnDelete(final IAjaxCallback pCallback) {
+        ArgUtil.checkNull(pCallback, "pCallback"); //$NON-NLS-1$
+        this.onDelete = pCallback == null ? NullAjaxCallback.GLOBAL : pCallback;
+        return this;
+    }
+
+    /**
+     * @param pCallback -
+     * @return -
+     */
+    public FileUploadPanel setOnReset(final IAjaxCallback pCallback) {
+        ArgUtil.checkNull(pCallback, "pCallback"); //$NON-NLS-1$
+        this.onReset = pCallback == null ? NullAjaxCallback.GLOBAL : pCallback;
+        return this;
+    }
+
+    /**
+     * @param pCallback -
+     * @return -
+     */
     public FileUploadPanel setOnUpload(final IAjaxCallback pCallback) {
         this.onUpload = pCallback == null ? NullAjaxCallback.GLOBAL : pCallback;
+        return this;
+    }
+
+    /**
+     * @param pCreator -
+     * @return -
+     */
+    public FileUploadPanel setTemporaryFileCreator(final IProducer<File> pCreator) {
+        this.temporaryFileCreator = pCreator == null ? DefaultTemporaryFileCreator.GLOBAL : pCreator;
         return this;
     }
 
@@ -98,6 +154,8 @@ public class FileUploadPanel extends Panel {
     private AjaxButton getDeleter() {
         if (this.deleter == null) {
             this.deleter = new IndicatingAjaxButton("deleter") { //$NON-NLS-1$
+                private static final long serialVersionUID = 9021528280576073380L;
+
                 @Override
                 protected void onSubmit(final AjaxRequestTarget pTarget, @SuppressWarnings("unused") final Form<?> pForm) {
                     FileUploadPanel.this.handler.onDelete(pTarget);
@@ -118,6 +176,8 @@ public class FileUploadPanel extends Panel {
     private AjaxButton getHiddenUploader() {
         if (this.hiddenUploader == null) {
             this.hiddenUploader = new AjaxButton("hiddenUploader") { //$NON-NLS-1$
+                private static final long serialVersionUID = 3637109892153262303L;
+
                 @Override
                 protected void onSubmit(final AjaxRequestTarget pTarget, @SuppressWarnings("unused") final Form<?> pForm) {
                     FileUploadPanel.this.handler.onUpload(pTarget);
@@ -136,6 +196,8 @@ public class FileUploadPanel extends Panel {
     private AjaxButton getRestorer() {
         if (this.restorer == null) {
             this.restorer = new IndicatingAjaxButton("restorer") { //$NON-NLS-1$
+                private static final long serialVersionUID = 622729316081692586L;
+
                 @Override
                 protected void onSubmit(final AjaxRequestTarget pTarget, @SuppressWarnings("unused") final Form<?> pForm) {
                     FileUploadPanel.this.handler.onRestore(pTarget);
@@ -145,26 +207,241 @@ public class FileUploadPanel extends Panel {
         return this.restorer;
     }
 
-    private class Handler implements Serializable {
+    @SuppressWarnings("resource")
+    private Data saveToTemporaryFile(final FileUpload pUpload) {
+        final File temp = this.temporaryFileCreator.produce();
+        OutputStream out = null;
+        BufferedOutputStream bufOut = null;
+        try {
+            out = new FileOutputStream(temp);
+            bufOut = new BufferedOutputStream(out);
+            IOUtils.copy(pUpload.getInputStream(), bufOut);
 
-        void onDelete(final AjaxRequestTarget pTarget) {
-            // TODO Auto-generated method stub
+            return new Data(pUpload.getClientFileName(), pUpload.getContentType(), temp);
 
+        } catch (final IOException e) {
+            throw ExceptionUtil.rethrow(e);
+
+        } finally {
+            pUpload.closeStreams();
+            IOUtils.closeQuietly(bufOut);
+            IOUtils.closeQuietly(out);
+        }
+    }
+
+    /**
+     * @author jabaraster -
+     */
+    public static class Data implements Serializable, Closeable {
+        private static final long serialVersionUID = 3840006366554216969L;
+
+        private final String      contentType;
+        private final String      name;
+
+        private File              saveFile;
+        private InputStream       in;
+
+        /**
+         * @param pContentType -
+         * @param pName -
+         * @param pSaveFile -
+         */
+        private Data(final String pName, final String pContentType, final File pSaveFile) {
+            ArgUtil.checkNullOrEmpty(pContentType, "pContentType"); //$NON-NLS-1$
+            ArgUtil.checkNull(pSaveFile, "pSaveFile"); //$NON-NLS-1$
+            this.name = pName == null ? Empty.STRING : pName;
+            this.contentType = pContentType;
+            this.saveFile = pSaveFile;
         }
 
-        void onRestore(final AjaxRequestTarget pTarget) {
-            // TODO Auto-generated method stub
-
+        /**
+         * @see java.io.Closeable#close()
+         */
+        @Override
+        public void close() {
+            if (this.saveFile == null) {
+                return;
+            }
+            if (this.in != null) {
+                try {
+                    this.in.close();
+                } catch (final IOException e) {
+                    // 無視
+                }
+            }
+            this.saveFile.delete();
+            this.saveFile = null;
         }
 
-        void onUpload(final AjaxRequestTarget pTarget) {
-            // TODO Auto-generated method stub
-            FileUploadPanel.this.onUpload.call(pTarget);
-            final FileUpload upload = getFile().getFileUpload();
-            if (upload != null) {
-                jabara.Debug.write("★★★ " + upload.getClientFileName());
+        /**
+         * @return -
+         */
+        public String getContentType() {
+            return this.contentType;
+        }
+
+        /**
+         * @return -
+         */
+        public InputStream getInputStream() {
+            if (this.saveFile == null) {
+                throw new IllegalStateException("closeを呼び出した後に当メソッドを呼び出すことは出来ません."); //$NON-NLS-1$
+            }
+            if (this.in != null) {
+                return this.in;
+            }
+            try {
+                this.in = new BufferedInputStream(new FileInputStream(this.saveFile));
+                return this.in;
+            } catch (final FileNotFoundException e) {
+                throw ExceptionUtil.rethrow(e);
             }
         }
 
+        /**
+         * @return -
+         */
+        public String getName() {
+            return this.name;
+        }
+
+        /**
+         * @see java.lang.Object#toString()
+         */
+        @SuppressWarnings("nls")
+        @Override
+        public String toString() {
+            return "Data [contentType=" + this.contentType + ", name=" + this.name + "]";
+        }
+    }
+
+    /**
+     * @author jabaraster -
+     */
+    public static class DataOperation implements Serializable, Closeable {
+        private static final long serialVersionUID = -3960649395769259898L;
+
+        private final Operation   operation;
+        private final Data        data;
+
+        /**
+         * @param pOperation -
+         * @param pData pOperationが{@link Operation#UPDATE}以外の場合、ここで指定されたオブジェクトは使われません.
+         */
+        public DataOperation(final Operation pOperation, final Data pData) {
+            ArgUtil.checkNull(pOperation, "pOperation"); //$NON-NLS-1$
+            if (this.operation == Operation.UPDATE && pData == null) {
+                throw new IllegalArgumentException("pOperationがUPDATEのとき、pDataはnullであってはいけません."); //$NON-NLS-1$
+            }
+
+            this.operation = pOperation;
+            this.data = this.operation == Operation.UPDATE ? pData : null;
+        }
+
+        /**
+         * @see java.io.Closeable#close()
+         */
+        @Override
+        public void close() {
+            this.data.close();
+        }
+
+        /**
+         * @return dataを返す.
+         * @throws IllegalStateException operationがUPDATE以外の場合.
+         */
+        public Data getData() {
+            if (this.data == null) {
+                throw new IllegalStateException("operationがUPDATEでなければこのメソッドは呼び出せません."); //$NON-NLS-1$
+            }
+            return this.data;
+        }
+
+        /**
+         * @return operationを返す.
+         */
+        public Operation getOperation() {
+            return this.operation;
+        }
+
+        /**
+         * @see java.lang.Object#toString()
+         */
+        @SuppressWarnings("nls")
+        @Override
+        public String toString() {
+            return "DataOperation [operation=" + this.operation + ", data=" + this.data + "]";
+        }
+    }
+
+    /**
+     * @author jabaraster -
+     */
+    public static class DefaultTemporaryFileCreator implements IProducer<File> {
+        private static final long                       serialVersionUID = 830320220166815993L;
+
+        /**
+         * 
+         */
+        public static final DefaultTemporaryFileCreator GLOBAL           = new DefaultTemporaryFileCreator();
+
+        /**
+         * @see jabara.general.IProducer#produce()
+         */
+        @Override
+        public File produce() {
+            try {
+                return File.createTempFile(FileUploadPanel.class.getName(), ".dat"); //$NON-NLS-1$
+            } catch (final IOException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+    }
+
+    /**
+     * @author jabaraster
+     */
+    public enum Operation {
+        /**
+         * 
+         */
+        NOOP,
+        /**
+         * 
+         */
+        UPDATE,
+        /**
+         * 
+         */
+        DELETE, ;
+    }
+
+    private class Handler implements Serializable {
+        private static final long serialVersionUID = -5086355719055362617L;
+
+        void onDelete(final AjaxRequestTarget pTarget) {
+            FileUploadPanel.this.operation = Operation.DELETE;
+            if (FileUploadPanel.this.uploadData != null) {
+                FileUploadPanel.this.uploadData.close();
+            }
+            FileUploadPanel.this.onDelete.call(pTarget);
+        }
+
+        void onRestore(final AjaxRequestTarget pTarget) {
+            FileUploadPanel.this.operation = Operation.NOOP;
+            if (FileUploadPanel.this.uploadData != null) {
+                FileUploadPanel.this.uploadData.close();
+            }
+            FileUploadPanel.this.onReset.call(pTarget);
+        }
+
+        void onUpload(final AjaxRequestTarget pTarget) {
+            final FileUpload upload = getFile().getFileUpload();
+            if (upload != null) {
+                FileUploadPanel.this.uploadData = saveToTemporaryFile(upload);
+                FileUploadPanel.this.operation = Operation.UPDATE;
+            }
+            FileUploadPanel.this.onUpload.call(pTarget);
+        }
     }
 }
